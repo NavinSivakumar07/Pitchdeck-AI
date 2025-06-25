@@ -80,6 +80,9 @@ instance/
 *.sqlite
 *.sqlite3
 
+# ChromaDB (not used)
+chroma_db/
+
 # Backup files
 *_backup.py
 *.bak

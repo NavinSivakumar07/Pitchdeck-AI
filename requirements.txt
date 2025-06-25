@@ -3,7 +3,7 @@ crewai
 crewai-tools
 python-dotenv
 openai
-pinecone
+pinecone-client
 langchain
 langchain-openai
 tiktoken
