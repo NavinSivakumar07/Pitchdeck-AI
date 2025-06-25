@@ -4,20 +4,17 @@ An intelligent AI-powered pitch deck generator that creates comprehensive startu
 
 ## ✨ Features
 
-- **🧠 Multi-Agent AI System**: Powered by CrewAI with specialized agents for knowledge analysis, research, and content generation
-- **🔍 RAG Technology**: Leverages Pinecone vector database for intelligent data retrieval and analysis
-- **📊 Comprehensive Research**: Automated market research and competitor analysis using SerperDev
-- **🎨 PowerPoint Generation**: Automatically creates professional PowerPoint presentations
-- **📁 Organized Outputs**: Structured file organization with detailed reports and analysis
+- **🧠 AI-Powered Content Generation**: Uses OpenAI GPT-4 to create compelling pitch deck content
+- **📝 Comprehensive Form Interface**: Detailed input form for all startup information
+- **🎨 Professional Output**: Structured pitch deck content ready for presentation
+- **⚡ Fast Processing**: Quick generation with real-time progress updates
 - **🌐 Web Interface**: Clean, intuitive Streamlit interface for easy interaction
+- **📱 Responsive Design**: Works on desktop and mobile devices
 
 ## 🛠️ Technology Stack
 
 - **Frontend**: Streamlit
-- **AI Framework**: CrewAI
 - **LLM**: OpenAI GPT-4
-- **Vector Database**: Pinecone
-- **Search**: SerperDev API
 - **Document Processing**: PyPDF2, pdfplumber
 - **Presentation**: python-pptx
 - **Backend**: Python 3.11+
@@ -28,11 +25,9 @@ An intelligent AI-powered pitch deck generator that creates comprehensive startu
 
 ## 📋 Prerequisites
 
-Before running this application, you need to obtain API keys for:
+Before running this application, you need to obtain:
 
 1. **OpenAI API Key** - For GPT-4 language model
-2. **Pinecone API Key** - For vector database operations
-3. **SerperDev API Key** - For web search functionality
 
 ## ⚙️ Installation
 
@@ -51,8 +46,6 @@ Before running this application, you need to obtain API keys for:
    Create a `.env` file in the root directory:
    ```env
    OPENAI_API_KEY=your_openai_api_key_here
-   PINECONE_API_KEY=your_pinecone_api_key_here
-   SERPER_API_KEY=your_serper_api_key_here
    ```
 
 4. **Run the application**
