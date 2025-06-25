@@ -7,7 +7,7 @@ import os
 import logging
 import time
 from typing import List, Dict, Any, Optional, Tuple
-import pinecone
+from pinecone import Pinecone
 from langchain.schema import Document
 from langchain_openai import OpenAIEmbeddings
 import numpy as np
@@ -33,7 +33,7 @@ class VectorDatabase:
             raise ValueError("PINECONE_API_KEY not found in environment variables")
         
         # Initialize Pinecone
-        pinecone.init(api_key=self.api_key, environment=self.environment)
+        self.pc = Pinecone(api_key=self.api_key)
         
         # Initialize OpenAI embeddings
         self.embeddings = OpenAIEmbeddings(
@@ -50,13 +50,13 @@ class VectorDatabase:
         """Set up the Pinecone index with proper configuration."""
         try:
             # Check if index exists
-            existing_indexes = pinecone.list_indexes()
+            existing_indexes = [index.name for index in self.pc.list_indexes()]
 
             if self.index_name not in existing_indexes:
                 logger.info(f"Creating new index: {self.index_name}")
 
                 # Create index
-                pinecone.create_index(
+                self.pc.create_index(
                     name=self.index_name,
                     dimension=1536,  # OpenAI text-embedding-3-small dimension
                     metric="cosine"
@@ -69,7 +69,7 @@ class VectorDatabase:
                 logger.info(f"Using existing index: {self.index_name}")
 
             # Connect to the index
-            self.index = pinecone.Index(self.index_name)
+            self.index = self.pc.Index(self.index_name)
 
             logger.info("Vector database initialized successfully")
             
