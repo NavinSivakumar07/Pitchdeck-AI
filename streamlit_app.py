@@ -11,6 +11,8 @@ from datetime import datetime
 import streamlit as st
 from dotenv import load_dotenv
 import openai
+from rag_implementation import EnhancedRAGAgent
+from simple_rag import SimpleRAG
 
 # Configure logging
 logging.basicConfig(
@@ -84,24 +86,51 @@ def configure_openai():
         if not openai_api_key:
             st.error("OpenAI API key not found. Please add it to your Streamlit secrets.")
             st.stop()
-        
+
         openai.api_key = openai_api_key
         return True
     except Exception as e:
         st.error(f"Failed to configure OpenAI: {str(e)}")
         return False
 
-def generate_pitch_content(startup_data):
-    """Generate pitch deck content using OpenAI."""
+def initialize_rag():
+    """Initialize RAG system."""
     try:
+        rag_system = SimpleRAG()
+        logger.info("RAG system initialized successfully")
+        return rag_system
+    except Exception as e:
+        logger.error(f"Failed to initialize RAG: {str(e)}")
+        st.error(f"Failed to initialize RAG system: {str(e)}")
+        return None
+
+def initialize_rag():
+    """Initialize RAG system."""
+    try:
+        rag_system = SimpleRAG()
+        return rag_system
+    except Exception as e:
+        st.error(f"Failed to initialize RAG system: {str(e)}")
+        return None
+
+def generate_pitch_content_with_rag(startup_data, rag_system):
+    """Generate pitch deck content using OpenAI with RAG analysis."""
+    try:
+        # First, perform RAG analysis
+        rag_analysis = rag_system.analyze_with_rag(startup_data)
+
+        # Check if company exists in database
+        company_check = rag_system.check_company_exists(startup_data['startup_name'])
+
         prompt = f"""
-        Create a comprehensive pitch deck for the startup "{startup_data['startup_name']}" with the following information:
-        
+        Create a comprehensive pitch deck for the startup "{startup_data['startup_name']}" using the following information and RAG analysis:
+
+        STARTUP INFORMATION:
         Company: {startup_data['startup_name']}
         Industry: {startup_data['industry_type']}
         Founder: {startup_data['founder_name']}
         Product: {startup_data['product_name']}
-        
+
         Vision: {startup_data['vision_statement']}
         Problem: {startup_data['key_problem_solved']}
         Solution: {startup_data['solution_summary']}
@@ -113,49 +142,59 @@ def generate_pitch_content(startup_data):
         Funding Amount: {startup_data['funding_amount']}
         Use of Funds: {startup_data['use_of_funds_split_percentages']}
         Monetization: {startup_data['monetization_plan']}
-        
-        Create a detailed pitch deck with the following slides:
+
+        RAG ANALYSIS FROM DATABASE:
+        {rag_analysis}
+
+        COMPANY DATABASE STATUS:
+        {"✅ Company found in database" if company_check['exists'] else "🆕 New company - not in database"}
+
+        Create a detailed pitch deck incorporating insights from the RAG analysis:
         1. Title Slide
-        2. Problem Statement
-        3. Solution
-        4. Market Opportunity
-        5. Business Model
-        6. Competitive Analysis
-        7. Marketing Strategy
-        8. Financial Projections
-        9. Funding Requirements
+        2. Problem Statement (enhanced with market insights)
+        3. Solution (positioned against similar companies)
+        4. Market Opportunity (validated with database patterns)
+        5. Business Model (compared to successful examples)
+        6. Competitive Analysis (informed by database)
+        7. Marketing Strategy (based on successful patterns)
+        8. Financial Projections (benchmarked against similar companies)
+        9. Funding Requirements (aligned with market standards)
         10. Team
-        
+
+        Include specific references to insights from similar companies in the database.
         Format the response as a structured pitch deck with clear sections and compelling content.
         """
-        
-        response = openai.ChatCompletion.create(
+
+        from openai import OpenAI
+        client = OpenAI(api_key=openai.api_key)
+
+        response = client.chat.completions.create(
             model="gpt-4",
             messages=[
-                {"role": "system", "content": "You are an expert pitch deck consultant who creates compelling startup presentations."},
+                {"role": "system", "content": "You are an expert pitch deck consultant with access to a database of successful pitch decks. Use the RAG analysis to create data-driven presentations."},
                 {"role": "user", "content": prompt}
             ],
             max_tokens=3000,
             temperature=0.7
         )
-        
-        return response.choices[0].message.content
-        
+
+        return response.choices[0].message.content, rag_analysis
+
     except Exception as e:
-        logger.error(f"Error generating pitch content: {e}")
-        return f"Error generating content: {str(e)}"
+        logger.error(f"Error generating pitch content with RAG: {e}")
+        return f"Error generating content: {str(e)}", ""
 
 def display_main_form():
     """Display the main form interface matching the original design."""
     
     # Header section
-    st.markdown('<h1 class="main-header">🚀 AI Pitch Deck Generator</h1>', unsafe_allow_html=True)
-    st.markdown('<p class="sub-header">Powered by OpenAI GPT-4</p>', unsafe_allow_html=True)
-    
+    st.markdown('<h1 class="main-header">🚀 AI Pitch Deck Generator with RAG</h1>', unsafe_allow_html=True)
+    st.markdown('<p class="sub-header">Powered by OpenAI GPT-4 + RAG Technology</p>', unsafe_allow_html=True)
+
     # Workflow info box
     st.markdown("""
     <div class="workflow-info">
-        <strong>🧠 Workflow:</strong> AI Analysis → Content Generation → Professional Pitch Deck
+        <strong>🧠 RAG Workflow:</strong> Database Search → Similar Companies Analysis → AI-Enhanced Content Generation
     </div>
     """, unsafe_allow_html=True)
     
@@ -242,7 +281,7 @@ def display_main_form():
     # Footer
     st.markdown("""
     <div class="footer-info">
-        🤖 Powered by OpenAI GPT-4 | 🚀 AI-Generated Pitch Decks
+        🤖 Powered by OpenAI GPT-4 | 🔍 RAG Technology | 📊 Database of Successful Pitch Decks
     </div>
     """, unsafe_allow_html=True)
 
@@ -253,13 +292,13 @@ def display_processing():
     progress_bar = st.progress(0)
     status_text = st.empty()
     
-    # Simulate progress updates
+    # RAG-enhanced progress updates
     steps = [
-        "🧠 Analyzing your startup information...",
-        "📊 Generating market insights...",
-        "📝 Creating pitch deck content...",
-        "🎨 Finalizing presentation structure...",
-        "✅ Complete!"
+        "🔍 Searching pitch deck database for similar companies...",
+        "📊 Analyzing patterns from successful startups...",
+        "🧠 Performing RAG analysis with historical data...",
+        "📝 Generating AI-enhanced pitch deck content...",
+        "✅ RAG-powered pitch deck complete!"
     ]
     
     for i, step in enumerate(steps):
@@ -268,9 +307,14 @@ def display_processing():
         
         if i == 2:  # Generate content at step 3
             if 'pitch_content' not in st.session_state:
-                with st.spinner("Generating your pitch deck..."):
-                    content = generate_pitch_content(st.session_state.startup_data)
-                    st.session_state.pitch_content = content
+                with st.spinner("Generating your pitch deck with RAG analysis..."):
+                    rag_system = st.session_state.get('rag_system')
+                    if rag_system:
+                        content, rag_analysis = generate_pitch_content_with_rag(st.session_state.startup_data, rag_system)
+                        st.session_state.pitch_content = content
+                        st.session_state.rag_analysis = rag_analysis
+                    else:
+                        st.session_state.pitch_content = "Error: RAG system not initialized"
         
         import time
         time.sleep(1)
@@ -294,9 +338,15 @@ def display_results():
     
     # Display the generated content
     if 'pitch_content' in st.session_state:
-        st.markdown("## 📋 Generated Pitch Deck Content")
+        # Show RAG analysis first
+        if 'rag_analysis' in st.session_state:
+            st.markdown("## 🔍 RAG Analysis Results")
+            with st.expander("📊 Database Search & Similar Companies Analysis", expanded=False):
+                st.markdown(st.session_state.rag_analysis)
+
+        st.markdown("## 📋 AI-Generated Pitch Deck Content")
         st.markdown(st.session_state.pitch_content)
-        
+
         # Company info
         if 'startup_data' in st.session_state:
             st.markdown("---")
@@ -311,9 +361,9 @@ def display_results():
                 st.info(f"**Product:** {data['product_name']}")
                 st.info(f"**Funding:** {data['funding_amount']}")
                 st.info(f"**Market Size:** {data['market_size']}")
-    
+
     st.markdown("---")
-    st.success("🎉 Your pitch deck has been generated! You can copy the content above and use it in your presentation.")
+    st.success("🎉 Your RAG-enhanced pitch deck has been generated! The content above includes insights from similar successful companies in our database.")
 
 def main():
     """Main Streamlit application."""
@@ -322,11 +372,20 @@ def main():
         st.session_state.processing = False
     if 'show_results' not in st.session_state:
         st.session_state.show_results = False
-    
+
     # Configure OpenAI
     if not configure_openai():
         st.stop()
-    
+
+    # Initialize RAG system
+    if 'rag_system' not in st.session_state:
+        rag_system = initialize_rag()
+        if rag_system:
+            st.session_state.rag_system = rag_system
+        else:
+            st.error("Failed to initialize RAG system")
+            st.stop()
+
     # Display appropriate page based on state
     if st.session_state.processing:
         display_processing()
